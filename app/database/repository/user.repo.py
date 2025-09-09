@@ -37,3 +37,13 @@ async def create_user(user_data: SignupSchema) -> User:
             detail="Failed to create user, please try again"
         )
     return new_user
+
+
+async def get_and_validate_user(user_id: str) -> User:
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User ID is required",
+        )
+    user = await get_user_by_id(user_id)
+    return user
