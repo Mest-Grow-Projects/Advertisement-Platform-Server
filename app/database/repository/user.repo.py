@@ -11,3 +11,15 @@ async def check_existing_user(email: str) -> bool:
             detail=f"User {email} already exists, please login"
         )
     return False
+
+
+async def get_user_by_id(user_id: str) -> User:
+    user = await User.get(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User not found, please register"
+        )
+    return user
+
+
