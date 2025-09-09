@@ -1,6 +1,7 @@
 from beanie import init_beanie
 from pymongo import AsyncMongoClient
 from app.config.config import get_settings
+from app.database.models.user import User
 
 
 settings = get_settings()
@@ -16,5 +17,5 @@ async def init_db():
     mongo_client = AsyncMongoClient(db_connection_string)
     await init_beanie(
         database=mongo_client.get_default_database(),
-        document_models=[]
+        document_models=[User]
     )
