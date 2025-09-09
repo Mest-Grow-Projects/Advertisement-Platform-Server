@@ -1,1 +1,3 @@
 fastapi[standard]
+beanie
+pydantic-settings
