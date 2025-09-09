@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
-
 from app.database.models.user import User
+from app.schema.user_schema import SignupSchema
 
 
 async def check_existing_user(email: str) -> bool:
@@ -23,3 +23,17 @@ async def get_user_by_id(user_id: str) -> User:
     return user
 
 
+async def create_user(user_data: SignupSchema) -> User:
+    new_user = User(
+        name=user_data.name,
+        email=str(user_data.email),
+        password=user_data.password
+    )
+    await new_user.insert()
+
+    if not new_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user, please try again"
+        )
+    return new_user
