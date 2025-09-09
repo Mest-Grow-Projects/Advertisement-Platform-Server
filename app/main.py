@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.database.db import init_db
+from app.auth.auth_router import router as auth_router
 
 
 @asynccontextmanager
@@ -28,3 +29,6 @@ app = FastAPI(
 )
 def get_homepage():
     return {"message": "Welcome to the Advertisement Management Platform API!"}
+
+
+app.include_router(auth_router, prefix="/auth")
