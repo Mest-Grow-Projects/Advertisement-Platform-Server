@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from app.database.models.user import User
 from app.schema.user_schema import SignupSchema
+from pydantic import BaseModel
 
 
 async def check_existing_user(email: str) -> bool:
@@ -47,3 +48,14 @@ async def get_and_validate_user(user_id: str) -> User:
         )
     user = await get_user_by_id(user_id)
     return user
+
+
+def validate_updated_data(data: BaseModel):
+    updated_data = data.model_dump(exclude_unset=True, exclude_none=True)
+
+    if not updated_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No data provided for update",
+        )
+    return updated_data
