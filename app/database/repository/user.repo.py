@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from app.database.models.user import User
 from app.schema.user_schema import SignupSchema
 from pydantic import BaseModel
+from app.config.password_hash import PasswordHash
 
 
 async def check_existing_user(email: str) -> bool:
@@ -25,10 +26,11 @@ async def get_user_by_id(user_id: str) -> User:
 
 
 async def create_user(user_data: SignupSchema) -> User:
+    hashed_password = PasswordHash.get_password_hash(user_data.password)
     new_user = User(
         name=user_data.name,
         email=str(user_data.email),
-        password=user_data.password
+        password=hashed_password
     )
     await new_user.insert()
 
