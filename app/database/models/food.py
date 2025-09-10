@@ -4,22 +4,25 @@ from datetime import datetime, timezone
 from pydantic import Field
 import pymongo
 
+# import cloudinary
+# import cloudinary.uploader
+
 
 class FoodCategory(str, Enum):
-    BEVERAGES = 'beverages',
-    SNACKS = 'snacks',
-    BREAKFAST = 'breakfast',
-    LUNCH = 'lunch',
-    DINNER = 'dinner',
-    FAST_FOOD = 'fast_food'
+    BEVERAGES = ("beverages",)
+    SNACKS = ("snacks",)
+    BREAKFAST = ("breakfast",)
+    LUNCH = ("lunch",)
+    DINNER = ("dinner",)
+    FAST_FOOD = "fast_food"
+
 
 class Nutrition(str, Enum):
-    CALORIES = 'calories',
-    PROTEINS = 'proteins',
-    FATS = 'fats',
-    CARBOHYDRATES = 'carbohydrates'
-    VITAMINS = 'vitamins'
-
+    CALORIES = ("calories",)
+    PROTEINS = ("proteins",)
+    FATS = ("fats",)
+    CARBOHYDRATES = "carbohydrates"
+    VITAMINS = "vitamins"
 
 
 class Food(Document):
@@ -38,5 +41,5 @@ class Food(Document):
         indexes = [
             [("createdAt", pymongo.DESCENDING)],
             [("price", pymongo.ASCENDING)],
-            [("ratings", pymongo.ASCENDING)]
+            [("ratings", pymongo.ASCENDING)],
         ]
