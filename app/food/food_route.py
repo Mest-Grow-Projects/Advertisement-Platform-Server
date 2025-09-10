@@ -1,44 +1,46 @@
 from fastapi import APIRouter, Form, File, UploadFile, HTTPException, status
 from app.schema.food_schema import FoodSchema
 from app.database.models.food import Food
+import cloudinary
+import cloudinary.uploader
+from typing import Annotated
 
-# from app.database.models.food import cloudinary
-# from app.database.models.food import cloudinary.uploader
 
+cloudinary.config(
+    cloud_name="dwlfbnmis",
+    api_key="635478319253588",
+    api_secret="O7D2CmW2S6J5oUFteftbGvmJxpE",
+)
 
-# cloudinary.config(
-#     cloud_name="dwlfbnmis",
-#     api_key="635478319253588",
-#     api_secret="O7D2CmW2S6J5oUFteftbGvmJxpE",
-# )
 
 router = APIRouter(tags=["Food"])
 
 
-@router.post("/food_ad")
+@router.post("/food_ads")
 async def post_food_ads(data: FoodSchema):
+    upload_result = cloudinary.uploader.upload(data.image.file)
     food = Food(
         name=data.name,
         description=data.description,
         category=data.category,
         price=data.price,
+        image=upload_result["secure_url"],
     )
+    # print(upload_result)
+    # insert event into database
+    # events_collection.insert_one(
+    #     {
+    #         "title": title,
+    #         "description": description,
+    #         "flyer": upload_result["secure_url"],
+
     await food.insert()
     return {"message": "You have successfully added an ad"}
 
 
 @router.get("/all")
 async def get_all_food_ads(limit=10, skip=0):
-    foods = await Food.find(
-        # filter={
-        #     "$or": [
-        #         {"name": {"$regex": data.name, "$options": "i"}},
-        #         {"description": {"$regex": data.description, "$options": "i"}},
-        #     ]
-        # },
-        # limit=int(limit),
-        # skip=int(skip),
-    ).to_list()
+    foods = await Food.find().to_list()
     return {"data": foods}
 
 
@@ -77,5 +79,4 @@ async def get_one_ad(food_id):
     get_one = await Food.get(food_id)
     if not get_one:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Food not found")
-    await get_one.get(food_id)
-    return {"message": f"{get_one}"}
+    return {"message": get_one}

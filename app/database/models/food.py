@@ -4,9 +4,6 @@ from datetime import datetime, timezone
 from pydantic import Field
 import pymongo
 
-# import cloudinary
-# import cloudinary.uploader
-
 
 class FoodCategory(str, Enum):
     BEVERAGES = ("beverages",)
