@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, Form, File, UploadFile, HTTPException, status, Depends
 from app.schema.food_schema import FoodSchema, FilterQuery
 from app.database.models.food import Food, FoodCategory
 import cloudinary
@@ -39,7 +39,7 @@ async def post_food_ads(name: Annotated[str, Form()],
 
 
 @router.get("/all")
-async def get_all_food_ads(filter_query: FilterQuery):
+async def get_all_food_ads(filter_query: FilterQuery = Depends()):
     skip = (filter_query.page - 1) * filter_query.limit
     query = {}
 
