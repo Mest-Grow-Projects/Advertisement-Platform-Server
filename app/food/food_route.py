@@ -4,12 +4,14 @@ from app.database.models.food import Food, FoodCategory
 import cloudinary
 import cloudinary.uploader
 from typing import Annotated
+from app.config.config import get_settings
 
 
+settings = get_settings()
 cloudinary.config(
-    cloud_name="dwlfbnmis",
-    api_key="635478319253588",
-    api_secret="O7D2CmW2S6J5oUFteftbGvmJxpE",
+    cloud_name=settings.CLOUD_NAME,
+    api_key=settings.API_KEY,
+    api_secret=settings.API_SECRET
 )
 
 
@@ -42,15 +44,14 @@ async def get_all_food_ads(limit=10, skip=0):
     return {"data": foods}
 
 
-@router.delete("/{food_id}")
-async def delete_food_ad(food_id):
+@router.get("/{food_id}")
+async def get_one_ad(food_id):
     if not food_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Food ID required")
-    deleted_ad = await Food.get(food_id)
-    if not deleted_ad:
+    get_one = await Food.get(food_id)
+    if not get_one:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Food not found")
-    await deleted_ad.delete()
-    return {"message": "Ad successfully deleted!"}
+    return {"message": get_one}
 
 
 @router.put("/food_ad/{food_id}")
@@ -67,14 +68,15 @@ async def update_food_ad(food_id, data: FoodSchema):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid input")
 
     await update_ad.set(updated_data)
-    return {"message": "Food ad upadated successfully!"}
+    return {"message": "Food ad updated successfully!"}
 
 
-@router.get("/{food_id}")
-async def get_one_ad(food_id):
+@router.delete("/{food_id}")
+async def delete_food_ad(food_id):
     if not food_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Food ID required")
-    get_one = await Food.get(food_id)
-    if not get_one:
+    deleted_ad = await Food.get(food_id)
+    if not deleted_ad:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Food not found")
-    return {"message": get_one}
+    await deleted_ad.delete()
+    return {"message": "Ad successfully deleted!"}
