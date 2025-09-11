@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Form, File, UploadFile, HTTPException, status
 from app.schema.food_schema import FoodSchema
-from app.database.models.food import Food
+from app.database.models.food import Food, FoodCategory
 import cloudinary
 import cloudinary.uploader
 from typing import Annotated
@@ -17,22 +17,20 @@ router = APIRouter(tags=["Food"])
 
 
 @router.post("/food_ads")
-async def post_food_ads(data: FoodSchema):
-    upload_result = cloudinary.uploader.upload(data.image.file)
+async def post_food_ads(name: Annotated[str, Form()],
+    description: Annotated[str, Form()],
+    category: Annotated[FoodCategory, Form()],
+    price: Annotated[float, Form()],
+    image: Annotated[UploadFile, File()]
+):
+    upload_result = cloudinary.uploader.upload(image.file)
     food = Food(
-        name=data.name,
-        description=data.description,
-        category=data.category,
-        price=data.price,
+        name=name,
+        description=description,
+        category=category,
+        price=price,
         image=upload_result["secure_url"],
     )
-    # print(upload_result)
-    # insert event into database
-    # events_collection.insert_one(
-    #     {
-    #         "title": title,
-    #         "description": description,
-    #         "flyer": upload_result["secure_url"],
 
     await food.insert()
     return {"message": "You have successfully added an ad"}
