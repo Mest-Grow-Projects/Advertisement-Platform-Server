@@ -1,7 +1,5 @@
 from pydantic import BaseModel
-from app.database.models.food import FoodCategory
-from typing import Annotated
-from fastapi import File, UploadFile
+from app.database.models.food import FoodCategory, Nutrition
 
 
 class FoodSchema(BaseModel):
@@ -9,4 +7,5 @@ class FoodSchema(BaseModel):
     description: str
     category: FoodCategory
     price: float
-    image: Annotated[UploadFile, File()]
+    ratings: float
+    nutrition: Nutrition
