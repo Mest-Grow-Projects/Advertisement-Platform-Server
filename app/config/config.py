@@ -5,6 +5,9 @@ from functools import lru_cache
 class Settings(BaseSettings):
     ENVIRONMENT: str = 'development'
     DATABASE_URI: str
+    CLOUD_NAME: str
+    API_KEY: str
+    API_SECRET: str
 
     model_config = SettingsConfigDict(
         env_file='.env',
