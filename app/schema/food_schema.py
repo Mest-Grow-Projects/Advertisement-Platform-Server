@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from app.database.models.food import FoodCategory
+from app.database.models.food import FoodCategory, Nutrition
 
 
 class FoodSchema(BaseModel):
@@ -7,3 +7,5 @@ class FoodSchema(BaseModel):
     description: str
     category: FoodCategory
     price: float
+    ratings: float
+    nutrition: Nutrition
