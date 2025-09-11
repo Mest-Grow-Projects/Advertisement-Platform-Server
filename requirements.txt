@@ -3,3 +3,4 @@ beanie
 pydantic-settings
 passlib[bcrypt]
 cloudinary
+motor>=3.0.0
