@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form, File, UploadFile, HTTPException, status
-from app.schema.food_schema import FoodSchema
+from app.schema.food_schema import FoodSchema, FilterQuery
 from app.database.models.food import Food, FoodCategory
 import cloudinary
 import cloudinary.uploader
@@ -39,9 +39,40 @@ async def post_food_ads(name: Annotated[str, Form()],
 
 
 @router.get("/all")
-async def get_all_food_ads(limit=10, skip=0):
-    foods = await Food.find().to_list()
-    return {"data": foods}
+async def get_all_food_ads(filter_query: FilterQuery):
+    skip = (filter_query.page - 1) * filter_query.limit
+    query = {}
+
+    if filter_query.name:
+        query["name"] = {"$regex": filter_query.name, "$options": "i"}
+    if filter_query.price:
+        query["price"] = {"$regex": filter_query.price, "$options": "i"}
+    if filter_query.ratings:
+        query["ratings"] = {"$regex": filter_query.ratings, "$options": "i"}
+    if filter_query.category:
+        query["category"] = filter_query.category.value
+    if filter_query.nutrition:
+        query["nutrition"] = filter_query.nutrition.value
+
+
+    total_food_count = await Food.find(query).count()
+    food_ads = (
+        await Food.find(query)
+        .sort(f"-{filter_query.order_by}")
+        .skip(skip)
+        .limit(filter_query.limit)
+        .to_list()
+    )
+    return {
+        "message": "food ads retrieved successfully",
+        "data": food_ads,
+        "pagination": {
+            "total": total_food_count,
+            "page": filter_query.page,
+            "limit": filter_query.limit,
+            "total_pages": (total_food_count + filter_query.limit - 1) // filter_query.limit,
+        }
+    }
 
 
 @router.get("/{food_id}")
