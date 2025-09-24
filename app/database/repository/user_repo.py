@@ -24,6 +24,15 @@ async def get_user_by_id(user_id: str) -> User:
         )
     return user
 
+async def get_user_by_email(email: str) -> User:
+    user = await User.find_one(User.email == email.lower())
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User not found, please register"
+        )
+    return user
+
 
 async def create_user(user_data: SignupSchema) -> User:
     hashed_password = PasswordHash.get_password_hash(user_data.password)
