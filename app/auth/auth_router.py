@@ -12,7 +12,7 @@ router = APIRouter(
     summary="User registration"
 )
 async def signup(user: SignupSchema):
-    return await auth_service.login(user)
+    return await auth_service.signup(user)
 
 
 @router.post(
