@@ -10,7 +10,7 @@ async def check_existing_user(email: str) -> bool:
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"User {email} already exists, please login"
+            detail=f"User {email} already exists, please login",
         )
     return False
 
@@ -20,16 +20,17 @@ async def get_user_by_id(user_id: str) -> User:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User not found, please register"
+            detail=f"User not found, please register",
         )
     return user
+
 
 async def get_user_by_email(email: str) -> User:
     user = await User.find_one(User.email == email.lower())
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User not found, please register"
+            detail=f"User not found, please register",
         )
     return user
 
@@ -39,14 +40,15 @@ async def create_user(user_data: SignupSchema) -> User:
     new_user = User(
         name=user_data.name,
         email=str(user_data.email),
-        password=hashed_password
+        password=hashed_password,
+        role=user_data.role,
     )
     await new_user.insert()
 
     if not new_user.id:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user, please try again"
+            detail="Failed to create user, please try again",
         )
     return new_user
 

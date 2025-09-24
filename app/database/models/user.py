@@ -11,6 +11,13 @@ class Gender(str, Enum):
     FEMALE = "female"
     NON_BINARY = "non-binary"
 
+
+class Roles(str, Enum):
+    ADMIN = "admin"
+    VENDOR = "vendor"
+    USER = "user"
+
+
 class User(Document):
     name: str
     email: Annotated[str, Indexed(unique=True)]
@@ -18,13 +25,13 @@ class User(Document):
     address: str | None = None
     phone_number: str | None = None
     gender: Gender | None = None
+    role: Roles
     profile_image: str | None = None
     dob: datetime | None = None
     bio: str | None = None
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-
     class Settings:
-        name = 'users'
+        name = "users"
         indexes = [[("createdAt", pymongo.DESCENDING)]]

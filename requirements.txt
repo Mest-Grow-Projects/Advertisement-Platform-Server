@@ -4,3 +4,5 @@ pydantic-settings
 passlib[bcrypt]
 cloudinary
 motor>=3.0.0
+google-genai
+pyjwt
