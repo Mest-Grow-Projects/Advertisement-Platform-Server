@@ -2,7 +2,7 @@ import os
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import jwt
+import jwt, os
 
 
 def is_authenticated(
