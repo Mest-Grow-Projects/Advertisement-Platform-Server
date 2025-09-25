@@ -70,8 +70,6 @@ async def get_all_food_ads(filter_query: FilterQuery = Depends()):
         query["ratings"] = {"$regex": filter_query.ratings, "$options": "i"}
     if filter_query.category:
         query["category"] = filter_query.category.value
-    if filter_query.nutrition:
-        query["nutrition"] = filter_query.nutrition.value
 
     total_food_count = await Food.find(query).count()
     food_ads = (
