@@ -5,6 +5,8 @@ from app.auth.auth_router import router as auth_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.food.food_route import router as food_router
 
+# from app.food.genai import genai_router
+
 
 origins = [
     "http://localhost:4200",
@@ -46,3 +48,4 @@ def get_homepage():
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(food_router, prefix="/food")
+# app.include_router(genai_router, prefix="/genai")
