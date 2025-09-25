@@ -12,7 +12,7 @@ class SignupSchema(BaseModel):
     email: EmailStr
     password: str = Field(
         min_length=5,
-        description="Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        description="Password must contain at least five character",
     )
     role: Roles
 
@@ -46,7 +46,7 @@ class SignupSchema(BaseModel):
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str = Field(
-        min_length=8,
-        description="Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        min_length=5,
+        description="Password must contain at least five character",
     )
     model_config = {"extra": "forbid"}
