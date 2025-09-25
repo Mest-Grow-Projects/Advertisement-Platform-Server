@@ -1,15 +1,16 @@
 from fastapi import HTTPException, status
-
 from app.schema.user_schema import SignupSchema, LoginSchema
 from app.database.repository.user_repo import (
     check_existing_user,
     create_user,
     get_user_by_email,
 )
-from app.config.password_hash import PasswordHash
+from app.config.password_hash import verify_password
 from datetime import datetime, timezone, timedelta
 import jwt
-import os
+from app.config.config import get_settings
+
+settings = get_settings()
 
 
 class AuthService:
@@ -28,22 +29,20 @@ class AuthService:
 
     async def login(self, user: LoginSchema):
         found_user = await get_user_by_email(str(user.email))
-        password_valid = PasswordHash.verify_password(
-            user.password, found_user.password
-        )
+        password_valid = verify_password(user.password, found_user.password)
 
         if not found_user or not password_valid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid email or password",
             )
-        encoded_jwt = jwt.encode(
+        access_token = jwt.encode(
             {
                 "id": str(found_user.id),
                 "role": found_user.role,
                 "exp": datetime.now(tz=timezone.utc) + timedelta(days=60),
             },
-            os.getenv("JWT_SECRET_KEY"),
+            settings.JWT_SECRET_KEY,
             "HS256",
         )
 
@@ -53,7 +52,7 @@ class AuthService:
                 "name": found_user.name,
                 "email": found_user.email,
                 "role": found_user.role,
-                "access_token": encoded_jwt,
+                "access_token": access_token,
             },
         }
 
