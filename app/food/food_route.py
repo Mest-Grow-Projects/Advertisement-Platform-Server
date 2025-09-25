@@ -31,10 +31,23 @@ async def post_food_ads(
     category: Annotated[FoodCategory, Form()],
     price: Annotated[float, Form()],
     user_id: Annotated[str, Depends(is_authenticated)],
-    image: Annotated[UploadFile, File()] = None,
+    image: Annotated[bytes, File()] = None,
 ):
+    existing_ad = await Food.find_one(
+        {
+            "name": {"$regex": f"^{name}$", "$options": "i"},
+            "category": category,
+            "owner": user_id,
+        }
+    )
+    if existing_ad:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You already posted this food ad.",
+        )
+
     if image:
-        upload_result = cloudinary.uploader.upload(image.file)
+        upload_result = cloudinary.uploader.upload(image)
     else:
         response = genai_client.models.generate_images(
             model="imagen-4.0-generate-001",
@@ -110,10 +123,10 @@ async def update_food_ad(
     category: Annotated[FoodCategory, Form()],
     price: Annotated[float, Form()],
     user_id: Annotated[str, Depends(is_authenticated)],
-    image: Annotated[UploadFile, File()] = None,
+    image: Annotated[bytes, File()] = None,
 ):
     if not image:
-        upload_result = cloudinary.uploader.upload(image.file)
+        upload_result = cloudinary.uploader.upload(image)
 
     else:
         # generate ai image
