@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Form, File, HTTPException, status, Depends
+from app.database.repository.user_repo import get_user_by_id
 from app.schema.food_schema import FilterQuery
 from app.database.models.food import Food, FoodCategory
 import cloudinary
@@ -33,17 +34,12 @@ async def post_food_ads(
     image: Annotated[bytes, File()] = None,
 ):
     # 🔒 prevent duplicates
-    existing_ad = await Food.find_one(
-        {
-            "name": {"$regex": f"^{name}$", "$options": "i"},
-            "category": category,
-            "owner": user_id,
-        }
-    )
+    existing_ad = await Food.find_one(name=name)
+    existing_user = await get_user_by_id(user_id)
     if existing_ad:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You already posted this food ad.",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Advert already exist.",
         )
 
     # 📸 handle upload or AI generation with a rich prompt
