@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, File, UploadFile, HTTPException, status, Depends
+from fastapi import APIRouter, Form, File, HTTPException, status, Depends
 from app.schema.food_schema import FilterQuery
 from app.database.models.food import Food, FoodCategory
 import cloudinary
@@ -11,7 +11,6 @@ from app.config.config import get_settings
 from app.dependencies.authz import has_roles
 from app.dependencies.authn import is_authenticated
 
-
 settings = get_settings()
 cloudinary.config(
     cloud_name=settings.CLOUD_NAME,
@@ -20,25 +19,46 @@ cloudinary.config(
 )
 genai_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-
 router = APIRouter(tags=["Food"])
 
 
 @router.post("/food_ads", dependencies=[Depends(has_roles(["vendor", "admin"]))])
 async def post_food_ads(
     name: Annotated[str, Form()],
+    location: Annotated[str, Form()],
     description: Annotated[str, Form()],
     category: Annotated[FoodCategory, Form()],
     price: Annotated[float, Form()],
     user_id: Annotated[str, Depends(is_authenticated)],
-    image: Annotated[UploadFile, File()] = None,
+    image: Annotated[bytes, File()] = None,
 ):
+    # 🔒 prevent duplicates
+    existing_ad = await Food.find_one(
+        {
+            "name": {"$regex": f"^{name}$", "$options": "i"},
+            "category": category,
+            "owner": user_id,
+        }
+    )
+    if existing_ad:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You already posted this food ad.",
+        )
+
+    # 📸 handle upload or AI generation with a rich prompt
     if image:
         upload_result = cloudinary.uploader.upload(image.file)
     else:
+        prompt = (
+            f"High quality, realistic photograph of {name}, "
+            f"a {category.value} food item. "
+            f"Description: {description}. "
+            "Styled as an appetizing, authentic photograph for an online food advertisement."
+        )
         response = genai_client.models.generate_images(
             model="imagen-4.0-generate-001",
-            prompt=name,
+            prompt=prompt,
             config=types.GenerateImagesConfig(number_of_images=1),
         )
         image_bytes = response.generated_images[0].image.image_bytes
@@ -46,13 +66,13 @@ async def post_food_ads(
 
     food = Food(
         name=name,
+        location=location,
         description=description,
         category=category,
         price=price,
-        Owner=user_id,
+        owner=user_id,  # lowercase to match model
         image=upload_result["secure_url"],
     )
-
     await food.insert()
     return {"message": "You have successfully added an ad"}
 
@@ -65,7 +85,7 @@ async def get_all_food_ads(filter_query: FilterQuery = Depends()):
     if filter_query.name:
         query["name"] = {"$regex": filter_query.name, "$options": "i"}
     if filter_query.price:
-        query["price"] = {"$regex": filter_query.price, "$options": "i"}
+        query["price"] = float(filter_query.price)
     if filter_query.ratings:
         query["ratings"] = {"$regex": filter_query.ratings, "$options": "i"}
     if filter_query.category:
@@ -102,29 +122,43 @@ async def get_one_ad(food_id):
     return {"message": get_one}
 
 
+@router.get("/similar/{food_id}")
+async def get_similar_foods(food_id: str, limit: int = 5):
+    base_food = await Food.get(food_id)
+    if not base_food:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Food not found"
+        )
+
+    query = {
+        "$and": [
+            {"_id": {"$ne": base_food.id}},
+            {
+                "$or": [
+                    {"category": base_food.category},
+                    {"name": {"$regex": base_food.name.split()[0], "$options": "i"}},
+                ]
+            },
+        ]
+    }
+    similar_foods = await Food.find(query).limit(limit).to_list()
+    return {
+        "message": "Similar foods retrieved successfully",
+        "data": similar_foods,
+    }
+
+
 @router.put("/food_ad/{food_id}")
 async def update_food_ad(
-    food_id,
+    food_id: str,
     name: Annotated[str, Form()],
+    location: Annotated[str, Form()],
     description: Annotated[str, Form()],
     category: Annotated[FoodCategory, Form()],
     price: Annotated[float, Form()],
     user_id: Annotated[str, Depends(is_authenticated)],
-    image: Annotated[UploadFile, File()] = None,
+    image: Annotated[bytes, File()] = None,
 ):
-    if not image:
-        upload_result = cloudinary.uploader.upload(image.file)
-
-    else:
-        # generate ai image
-        response = genai_client.models.generate_images(
-            model="imagen-4.0-generate-001",
-            prompt=name,
-            config=types.GenerateImagesConfig(number_of_images=1),
-        )
-        image_bytes = response.generated_images[0].image.image_bytes
-        upload_result = cloudinary.uploader.upload(io.BytesIO(image_bytes))
-
     if not food_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Food ID required")
 
@@ -132,25 +166,44 @@ async def update_food_ad(
     if not update_ad:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Food not found")
 
-    updated_data = updated_data = {
+    # 📸 upload new image if provided, else generate AI image prompt if you want, else keep old
+    if image:
+        upload_result = cloudinary.uploader.upload(io.BytesIO(image))
+        image_url = upload_result["secure_url"]
+    else:
+        # you can also generate a new AI image here using the same rich prompt:
+        prompt = (
+            f"High quality, realistic photograph of {name}, "
+            f"a {category.value} food item. "
+            f"Description: {description}. "
+            "Styled as an appetizing, authentic photograph for an online food advertisement."
+        )
+        response = genai_client.models.generate_images(
+            model="imagen-4.0-generate-001",
+            prompt=prompt,
+            config=types.GenerateImagesConfig(number_of_images=1),
+        )
+        image_bytes = response.generated_images[0].image.image_bytes
+        upload_result = cloudinary.uploader.upload(io.BytesIO(image_bytes))
+        image_url = upload_result["secure_url"]
+
+    updated_data = {
         "name": name,
+        "location": location,
         "description": description,
         "category": category,
         "price": price,
-        "Owner": user_id,
-        "image": upload_result["secure_url"] if image else update_ad.image,
+        "owner": user_id,
+        "image": image_url,
     }
-
-    if not updated_data:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid input")
-
     await update_ad.set(updated_data)
     return {"message": "Food ad updated successfully!"}
 
 
 @router.delete("/{food_id}")
 async def delete_food_ad(
-    food_id: str, user: Annotated[dict, Depends(has_roles(["vendor", "admin"]))]
+    food_id: str,
+    user: Annotated[dict, Depends(has_roles(["vendor", "admin"]))],
 ):
     if not food_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Food ID required")

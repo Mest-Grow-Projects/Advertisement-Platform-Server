@@ -41,7 +41,7 @@ async def create_user(user_data: SignupSchema) -> User:
         name=user_data.name,
         email=str(user_data.email),
         password=hashed_password,
-        role=user_data.role,
+        role=user_data.role or "user",
     )
     await new_user.insert()
 
