@@ -25,6 +25,7 @@ router = APIRouter(tags=["Food"])
 @router.post("/food_ads", dependencies=[Depends(has_roles(["vendor", "admin"]))])
 async def post_food_ads(
     name: Annotated[str, Form()],
+    location: Annotated[str, Form()],
     description: Annotated[str, Form()],
     category: Annotated[FoodCategory, Form()],
     price: Annotated[float, Form()],
@@ -65,6 +66,7 @@ async def post_food_ads(
 
     food = Food(
         name=name,
+        location=location,
         description=description,
         category=category,
         price=price,
@@ -150,6 +152,7 @@ async def get_similar_foods(food_id: str, limit: int = 5):
 async def update_food_ad(
     food_id: str,
     name: Annotated[str, Form()],
+    location: Annotated[str, Form()],
     description: Annotated[str, Form()],
     category: Annotated[FoodCategory, Form()],
     price: Annotated[float, Form()],
@@ -186,6 +189,7 @@ async def update_food_ad(
 
     updated_data = {
         "name": name,
+        "location": location,
         "description": description,
         "category": category,
         "price": price,

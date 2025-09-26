@@ -24,6 +24,7 @@ class Nutrition(str, Enum):
 
 class Food(Document):
     name: str
+    location: str
     image: str | None = None
     category: FoodCategory
     price: float
