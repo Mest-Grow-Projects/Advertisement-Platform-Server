@@ -20,6 +20,6 @@ class FilterQuery(BaseModel):
     ratings: float | None = None
     order_by: Literal["created_at", "updated_at"] = "created_at"
     page: int = Field(1, ge=1)
-    limit: int = Field(20, ge=1, le=50)
+    limit: int = Field(50, ge=1, le=50)
 
     model_config = {"extra": "forbid"}
