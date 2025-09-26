@@ -33,13 +33,11 @@ async def post_food_ads(
     user_id: Annotated[str, Depends(is_authenticated)],
     image: Annotated[bytes, File()] = None,
 ):
-    # 🔒 prevent duplicates
-    existing_ad = await Food.find_one(name=name)
-    existing_user = await get_user_by_id(user_id)
+    existing_ad = await Food.find_one({"name": name, "owner": user_id})
     if existing_ad:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Advert already exist.",
+            detail="You already posted this ad."
         )
 
     # 📸 handle upload or AI generation with a rich prompt
